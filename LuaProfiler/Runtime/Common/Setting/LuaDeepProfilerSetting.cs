@@ -42,6 +42,13 @@ namespace MikuLuaProfiler
     using System.Collections.Generic;
     using UnityEngine;
 
+    // 调试模式
+    public enum ProfileMode {
+        Local = 0,
+        Remote,
+        Server,
+    }
+
     [Serializable]
     public class LuaDeepProfilerSetting
     {
@@ -114,7 +121,35 @@ namespace MikuLuaProfiler
                 }
             }
         }
+        public ProfileMode profileMode {
+            get
+            {
+                return m_profileMode;
+            }
+            set
+            {
+                if (m_profileMode != value)
+                {
+                    m_profileMode = value;
+                    Save();
+                }
+            }
+        }
 
+        public string luaInstance {
+            get
+            {
+                return m_luaInstance;
+            }
+            set
+            {
+                if (m_luaInstance != value)
+                {
+                    m_luaInstance = value;
+                    Save();
+                }
+            }
+        }
         public bool isCleanMode
         {
             get
@@ -277,6 +312,8 @@ namespace MikuLuaProfiler
         public bool m_isFrameRecord = false;
         public int m_captureFrameRate = 30;
         public bool m_isLocal = true;
+        public ProfileMode m_profileMode = ProfileMode.Local;
+        public string m_luaInstance = "LuaInstance";
         public string m_ip = "127.0.0.1";
         public int m_port = 2333;
 

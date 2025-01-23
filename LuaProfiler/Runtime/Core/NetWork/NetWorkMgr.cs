@@ -134,6 +134,7 @@ namespace MikuLuaProfiler
 
                     while (ns.CanRead && ns.DataAvailable)
                     {
+                        int len = br.ReadInt32();
                         int head = br.ReadInt32();
                         //处理粘包
                         if (head == PACK_HEAD)
@@ -194,11 +195,13 @@ namespace MikuLuaProfiler
                         {
                             while (m_cmdQueue.Count > 0)
                             {
+                                bw.BeginWrite();
                                 var msg = m_cmdQueue.Dequeue();
                                 bw.Write(PACK_HEAD);
                                 bw.Write((int)msg.MsgHead);
                                 msg.Write(bw);
                                 msg.WriteOver();
+                                bw.EndWrite();
                             }
                         }
                     }

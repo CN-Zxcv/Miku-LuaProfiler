@@ -2,16 +2,44 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using UnityEditor.Rendering;
+using UnityEngine;
 
 namespace MikuLuaProfiler
 {
     // Token: 0x02000002 RID: 2
     public sealed class MBinaryWriter : BinaryWriter
     {
+        private MemoryStream memoryStream;
+        private Stream realOutStream;
+        // Hx@流式写入第三方不好处理读取, 阻塞等待读取不方便实现, 效率也不高
+        // 改为采用包长+包体方式
+        // BeginWrite/EndWrite拦截写入流
+        public void BeginWrite()
+        {
+            memoryStream = new MemoryStream();
+            OutStream = memoryStream;
+        }
+        public unsafe void EndWrite()
+        {
+            fixed (byte* ptr = _buffer)
+            {
+                *(uint*)ptr = (uint)memoryStream.Length;
+            }
+            Debug.Log("EndWrite: " + memoryStream.Length);
+
+            realOutStream.Write(this._buffer, 0, 4);
+            realOutStream.Write(memoryStream.ToArray(), 0, (int)memoryStream.Length);
+            memoryStream.Dispose();
+            memoryStream = null;
+            OutStream = realOutStream;
+        }
+
         // Token: 0x06000001 RID: 1 RVA: 0x00002050 File Offset: 0x00000250
         public MBinaryWriter(Stream output) : base(output)
         {
             this._buffer = new byte[8];
+            realOutStream = OutStream;
         }
 
         // Token: 0x06000002 RID: 2 RVA: 0x00002068 File Offset: 0x00000268

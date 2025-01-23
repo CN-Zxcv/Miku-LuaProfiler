@@ -355,58 +355,16 @@ namespace MikuLuaProfiler
             var setting = LuaDeepProfilerSetting.Instance;
 
             #region socket
-            bool oldIsLocal = LuaDeepProfilerSetting.Instance.isLocal;
-            string localName = "local mode";
-            if (!LuaDeepProfilerSetting.Instance.isLocal)
-            {
-                localName = "remote mode";
-            }
-            LuaDeepProfilerSetting.Instance.isLocal = GUILayout.Toggle(LuaDeepProfilerSetting.Instance.isLocal, localName, EditorStyles.toolbarButton, GUILayout.Height(30));
-            if (!oldIsLocal && LuaDeepProfilerSetting.Instance.isLocal)
-            {
-                OpenLocalMode();
-            }
 
-            if (!LuaDeepProfilerSetting.Instance.isLocal)
-            {
-                GUILayout.Label("ip:", GUILayout.Height(30), GUILayout.Width(35));
-                LuaDeepProfilerSetting.Instance.ip = EditorGUILayout.TextField(LuaDeepProfilerSetting.Instance.ip, GUILayout.Height(16), GUILayout.Width(150));
+            string[] options = new string[] {"Local", "Remote", "Server"};
+            ProfileMode oldMode = setting.profileMode;
+            setting.profileMode = (ProfileMode)EditorGUILayout.Popup("ProfileMode", (int)setting.profileMode, options);
 
-                GUILayout.Label("port:", GUILayout.Height(30), GUILayout.Width(35));
-                port = EditorGUILayout.IntField(port, GUILayout.Height(16), GUILayout.Width(50));
-
-                if (!NetWorkMgrClient.GetIsConnect())
-                {
-                    if (GUILayout.Button("Connect", GUILayout.Height(20)))
-                    {
-                        ClearConsole();
-                        NetWorkMgrClient.Disconnect();
-                        currentFrameIndex = 0;
-                        m_TreeView.Clear(true);
-                        LuaProfiler.UnRegistReceive();
-                        Sample.UnRegAction();
-                        LuaRefInfo.UnRegAction();
-
-                        NetWorkMgrClient.Connect(LuaDeepProfilerSetting.Instance.ip, port);
-                        Sample.RegAction(m_TreeView.LoadRootSample);
-                        LuaRefInfo.RegAction(m_luaRefScrollView.DelRefInfo);
-                        //NetWorkServer.RegisterOnReceiveDiffInfo(m_luaDiffScrollView.DelDiffInfo);
-                    
-                    }
-                }
-                else
-                {
-                    if (GUILayout.Button("Disconnect",GUILayout.Height(20)))
-                    {
-                        ClearConsole();
-                        NetWorkMgrClient.Disconnect();
-                        UnityEngine.Debug.Log("<color=#ff0000>disconnect</color>");
-                    }
+            if (setting.profileMode == ProfileMode.Local) {
+                if (oldMode != ProfileMode.Local) {
+                    OpenLocalMode();
                 }
 
-            }
-            else
-            {
                 GUILayout.Space(10);
                 flag = GUILayout.Toggle(setting.isDeepLuaProfiler, "Deep Lua", EditorStyles.toolbarButton);
                 if (flag != setting.isDeepLuaProfiler)
@@ -445,6 +403,78 @@ namespace MikuLuaProfiler
                 if (GUILayout.Button("GC"))
                 {
                     LuaDLL.lua_gc_unhook(LuaProfiler.mainL, LuaGCOptions.LUA_GCCOLLECT, 0);
+                }
+            } else if (setting.profileMode == ProfileMode.Remote) {
+                GUILayout.Label("ip:", GUILayout.Height(15), GUILayout.Width(35));
+                LuaDeepProfilerSetting.Instance.ip = EditorGUILayout.TextField(LuaDeepProfilerSetting.Instance.ip, GUILayout.Height(16), GUILayout.Width(150));
+
+                GUILayout.Label("port:", GUILayout.Height(15), GUILayout.Width(35));
+                port = EditorGUILayout.IntField(port, GUILayout.Height(16), GUILayout.Width(50));
+
+                if (!NetWorkMgrClient.GetIsConnect())
+                {
+                    if (GUILayout.Button("Connect", GUILayout.Height(16)))
+                    {
+                        ClearConsole();
+                        NetWorkMgrClient.Disconnect();
+                        currentFrameIndex = 0;
+                        m_TreeView.Clear(true);
+                        LuaProfiler.UnRegistReceive();
+                        Sample.UnRegAction();
+                        LuaRefInfo.UnRegAction();
+
+                        NetWorkMgrClient.Connect(LuaDeepProfilerSetting.Instance.ip, port);
+                        Sample.RegAction(m_TreeView.LoadRootSample);
+                        LuaRefInfo.RegAction(m_luaRefScrollView.DelRefInfo);
+                        //NetWorkServer.RegisterOnReceiveDiffInfo(m_luaDiffScrollView.DelDiffInfo);
+                    
+                    }
+                }
+                else
+                {
+                    if (GUILayout.Button("Disconnect",GUILayout.Height(16)))
+                    {
+                        ClearConsole();
+                        NetWorkMgrClient.Disconnect();
+                        Debug.Log("<color=#ff0000>disconnect</color>");
+                    }
+                }
+
+            } else if (setting.profileMode == ProfileMode.Server) {
+                EditorGUIUtility.labelWidth = 30;
+                setting.ip = EditorGUILayout.TextField("ip", setting.ip, GUILayout.Width(100));
+                setting.port = EditorGUILayout.IntField("port", setting.port);
+                setting.luaInstance = EditorGUILayout.TextField("inst", setting.luaInstance, GUILayout.Width(150));
+                EditorGUIUtility.labelWidth = 0;
+                
+                if (!NetWorkMgrClient.GetIsConnect())
+                {
+                    if (GUILayout.Button("Connect"))
+                    {
+                        ClearConsole();
+                        NetWorkMgrClient.Disconnect();
+                        currentFrameIndex = 0;
+                        m_TreeView.Clear(true);
+                        LuaProfiler.UnRegistReceive();
+                        Sample.UnRegAction();
+                        LuaRefInfo.UnRegAction();
+
+                        Debug.Log("Connect to " + setting.ip + ":" + setting.port);
+                        NetWorkMgrClient.Connect(setting.ip, setting.port);
+                        Sample.RegAction(m_TreeView.LoadRootSample);
+                        LuaRefInfo.RegAction(m_luaRefScrollView.DelRefInfo);
+
+                        // 发送握手订阅包
+                        PKGHandshake handshake = new PKGHandshake();
+                        handshake.lua = setting.luaInstance;
+                        NetWorkMgrClient.SendMessage(handshake);
+                    }
+                } else {
+                    if (GUILayout.Button("Disconnect"))
+                    {
+                        ClearConsole();
+                        NetWorkMgrClient.Disconnect();
+                    }
                 }
             }
             

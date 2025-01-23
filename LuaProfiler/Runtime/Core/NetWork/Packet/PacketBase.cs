@@ -12,6 +12,7 @@ namespace MikuLuaProfiler
         DisConnect,
         ProfileSampleData,
         LuaRefInfo,
+        Handshake, 
     }
 
     public class PacketMsgAttribute : Attribute

@@ -100,17 +100,24 @@ namespace MikuLuaProfiler
 
                     while (ns.CanRead && ns.DataAvailable)
                     {
+                        // 读取数据包长度, 这里可以不用, 给其他实现用的
+                        int len = br.ReadInt32();
                         int head = br.ReadInt32();
+                        // Debug.Log(string.Format("head:{0}, len={1}, pack_head={2}", head, len, PACK_HEAD));
                         //处理粘包
                         if (head == PACK_HEAD)
                         {
                             int messageId = br.ReadInt32();
+                            // Debug.Log(string.Format("messageId:{0}", messageId));
                             Type t;
                             if (receiveMsgDict.TryGetValue(messageId, out t))
                             {
                                 var msg = Activator.CreateInstance(t) as PacketBase;
                                 msg.Read(br);
+                                // Debug.Log(string.Format("messageId:{0} received", messageId));
                                 msg.OnRun();
+                            } else {
+                                Debug.Log(string.Format("messageId:{0} not found", messageId));
                             }
                         }
                     }
@@ -135,12 +142,14 @@ namespace MikuLuaProfiler
         {
             if(bw == null) return;
 
+            bw.BeginWrite();
             bw.Write(PACK_HEAD);
             int msgId = 0;
             receiveMsgTypeDict.TryGetValue(msg.GetType(), out msgId);
             bw.Write(msgId);
             msg.Write(bw);
             msg.WriteOver();
+            bw.EndWrite();
         }
 
     }

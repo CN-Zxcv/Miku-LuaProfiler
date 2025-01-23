@@ -5,6 +5,10 @@ using System.IO;
 
 namespace MikuLuaProfiler
 {
+    using UnityEditor;
+    using UnityEditor.IMGUI.Controls;
+    using UnityEngine;
+
     [PacketMsg(MsgHead.ProfileSampleData)]
     public class Sample: PacketBase<Sample>
     {
@@ -325,11 +329,13 @@ namespace MikuLuaProfiler
             costLuaGC = br.ReadInt32();
             costMonoGC = br.ReadInt32();
             name = br.ReadString();
+            // UnityEngine.Debug.Log("Read Sample ss");
 
             costTime = br.ReadInt32();
             currentLuaMemory = br.ReadInt32();
             currentMonoMemory = br.ReadInt32();
             ushort childCount = br.ReadUInt16();
+            // UnityEngine.Debug.Log("childCount:" + childCount);
             for (int i = 0; i < childCount; i++)
             {
                 var s = PacketFactory<Sample>.GetPacket();
@@ -875,6 +881,8 @@ namespace MikuLuaProfiler
             if (OnReciveSample != null)
             {
                 OnReciveSample.Invoke(this); 
+            } else {
+                Debug.LogError("OnReciveSample is null");
             }
         }
         
